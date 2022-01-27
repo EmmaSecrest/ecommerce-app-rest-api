@@ -1,4 +1,4 @@
-const express = require('express')
+const express = require("express");
 const app = express();
 const bodyParser = require('body-parser');
 // const routerIndex = require('./routes/index')
@@ -32,8 +32,7 @@ const router = require('./routes/routes')
 app.use('/', router)
 
 const port = process.env.PORT || 3000
+
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
-
-
+  console.log(`Example app listening at http://localhost:${port}`);
+});

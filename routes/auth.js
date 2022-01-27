@@ -1,6 +1,7 @@
 const express = require('express');
-const router = express.Router();
-const {pool} = require('../config')
+const authRouter = express.Router();
+const { pool } = require('../config')
+const { validateEmail, UserByEmailExists } = require('../services/authService');
 
 //Registration - can they register, or do have they already an account
 
@@ -8,28 +9,10 @@ const {pool} = require('../config')
 // might want to add a check to see if it is a legit email
 
 // checking to see if it is a real email
-const validateEmail = (email) => {
-    var re = /\S+@\S+\.\S+/;
-    return re.test(email);
-  };
 
-const UserByEmailExists =  (email) => {
-   pool.query("SELECT * FROM users WHERE email = ? ", [email],
-    function(err, data){
-        if (err){
-            console.log(err)
-        } else{
-            if(data){
-                console.log('user already exists. Returning true')
-                return true;
-                
-            } else {
-                return false;
-            }
-        }
-    })
-}
-
+authRouter.get('/', (req, res) => {
+    res.send('auth page')
+})
 
 
 
@@ -38,4 +21,4 @@ const UserByEmailExists =  (email) => {
 
 
 
-module.exports = validateEmail;
+module.exports = authRouter
