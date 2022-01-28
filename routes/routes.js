@@ -5,7 +5,7 @@ const authRouter = require("./auth");
 const { pool } = require("../config");
 
 const express = require("express");
-const res = require("express/lib/response");
+// const res = require("express/lib/response");
 const router = express();
 
 router.use("/users", userAccount);

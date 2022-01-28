@@ -27,7 +27,7 @@ cartRouter.get('/' ,ensureAuthentication ,(req,res) => {
 
 // view items in a specific cart 
 // SQL query for this function: select users.first_name, users.last_name , cart.id as cart_id, product.name as product_name, product.description ,product.quantity from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id
-cartRouter.get('/:cartId',ensureAuthentication ,(req,res) => {
+cartRouter.get('/:cartId' ,(req,res) => {
     const requestedCart = Number(req.params.cartId)
     pool.query('select users.first_name, users.last_name , cart.id as cart_id, product.name as product_name, product.description from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id WHERE cart.id = $1' , [requestedCart] , 
     function (err, data){
@@ -127,7 +127,9 @@ cartRouter.delete('/:cartId',ensureAuthentication ,(req,res) =>{
 
 
 
-cartRouter.get('/:cartId/checkout',ensureAuthentication ,(req,res) =>{
+
+
+cartRouter.get('/:cartId/checkout',(req,res) =>{
     // a total would also be added up as well
     const requestedCart = Number(req.params.cartId)
     pool.query('select users.first_name, users.last_name , cart.id as cart_id, product.name as product_name, product.description ,product.price,product.quantity from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id WHERE cart.id = $1',[requestedCart],
@@ -141,10 +143,11 @@ cartRouter.get('/:cartId/checkout',ensureAuthentication ,(req,res) =>{
         for(let i=0 ; i< data.rows.length ; i++){
             
             price = price + parseInt(data.rows[i].price);
-            console.log(parseInt(data.rows[i].price))
             productsPurchased.push(data.rows[i].product_name)
-            
-        }
+
+            }
+            // console.log(data.rows)
+
         const sendMe = [price,productsPurchased]
         res.send(sendMe)
       }
