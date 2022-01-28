@@ -27,7 +27,6 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 require('dotenv').config() //loads the dotenv package
 require('./config')
-require('./db/database')
 const router = require('./routes/routes')
 app.use('/', router)
 
