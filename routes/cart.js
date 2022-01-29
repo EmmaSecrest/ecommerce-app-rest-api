@@ -127,7 +127,7 @@ cartRouter.delete('/:cartId',ensureAuthentication ,(req,res) =>{
 
 
 const placeInOrder = (total,user_id , done)=>{
- pool.query('INSERT INTO orders (total, user_id) VALUES ($1 , $2) RETURNING id' , [total, user_id],
+ pool.query('INSERT INTO orders (total, user_id , status) VALUES ($1 , $2, "received") RETURNING id' , [total, user_id],
  function(err, result){
      if(err){
          console.log(err)
