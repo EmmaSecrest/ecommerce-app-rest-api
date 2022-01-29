@@ -27,7 +27,7 @@ cartRouter.get('/' ,ensureAuthentication ,(req,res) => {
 
 // view items in a specific cart 
 // SQL query for this function: select users.first_name, users.last_name , cart.id as cart_id, product.name as product_name, product.description ,product.quantity from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id
-cartRouter.get('/:cartId' ,(req,res) => {
+cartRouter.get('/:cartId',ensureAuthentication ,(req,res) => {
     const requestedCart = Number(req.params.cartId)
     pool.query('select users.first_name, users.last_name , cart.id as cart_id, product.name as product_name, product.description from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id WHERE cart.id = $1' , [requestedCart] , 
     function (err, data){
@@ -75,7 +75,7 @@ const checkProductInCart = (cartId, productId ,done) => {
 }
 
 // needs to be tested
-cartRouter.post('/:cartId' , (req,res) => {
+cartRouter.post('/:cartId' ,ensureAuthentication ,(req,res) => {
     const  itemId = req.body.itemId
     // console.log(itemName)
       getProductByName(itemId, function(err, result){
@@ -126,29 +126,67 @@ cartRouter.delete('/:cartId',ensureAuthentication ,(req,res) =>{
 })
 
 
+const placeInOrder = (total,user_id , done)=>{
+ pool.query('INSERT INTO orders (total, user_id) VALUES ($1 , $2) RETURNING id' , [total, user_id],
+ function(err, result){
+     if(err){
+         console.log(err)
+         done(err,null)
+     } else{
+      
+        done(null, result)
+     }
+ }
+ )
+}
+
+ const placeInOrderItem = (price,productId,orderId,done )=>{
+    pool.query('INSERT INTO order_item (price , product_id, order_id) VALUES ($1,$2, $3)' ,[price,productId,orderId],
+    function(err,result){
+        if(err){
+            console.log(err)
+            done(err,null)
+        } else{
+            done(null,result)
+        }
+    })
+ }
 
 
-
-cartRouter.get('/:cartId/checkout',(req,res) =>{
-    // a total would also be added up as well
+cartRouter.get('/:cartId/checkout',ensureAuthentication,(req,res) =>{
+    
     const requestedCart = Number(req.params.cartId)
-    pool.query('select users.first_name, users.last_name , cart.id as cart_id, product.name as product_name, product.description ,product.price,product.quantity from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id WHERE cart.id = $1',[requestedCart],
+    pool.query('select users.first_name, users.last_name , cart.id as cart_id,product.id as product_id ,product.name as product_name, product.description ,product.price,product.quantity from users join cart on users.id = cart.user_id join cart_item on cart.id = cart_item.cart_id join product on product.id = cart_item.product_id WHERE cart.id = $1',[requestedCart],
     function(err,data){
       if(err){
           console.log(err)
       } else {
-        //   console.log(data)
+        //  console.log(data.rows)
         let price = 0 ;
-        let productsPurchased =[];
+        
         for(let i=0 ; i< data.rows.length ; i++){
             
             price = price + parseInt(data.rows[i].price);
-            productsPurchased.push(data.rows[i].product_name)
+            // productsPurchased.push(data.rows[i].product_name)
 
             }
             // console.log(data.rows)
+            const sendMe = [price]
+            
+            placeInOrder(sendMe[0], Number(req.user.id), function(err,result){
+                if(err){
+                    console.log(err)
+                }
+                 for(let i = 0; i<data.rows.length; i++){
+                     placeInOrderItem(data.rows[i].price , data.rows[i].product_id,result.rows[0].id ,function(err,results){
+                         if(err){
+                             console.log(err)
+                         }
+                     })
+                 }
+            })
 
-        const sendMe = [price,productsPurchased]
+        
         res.send(sendMe)
       }
     })
