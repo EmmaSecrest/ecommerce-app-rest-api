@@ -2,7 +2,7 @@ const userAccount = require("./user");
 const productRouter = require("./product");
 const cartRouter = require("./cart");
 const authRouter = require("./auth");
-const { pool } = require("../config");
+const orderRouter = require('./order')
 const { loginRouter } = require('./login')
 
 const express = require("express");
@@ -13,7 +13,8 @@ router.use("/users", userAccount);
 router.use("/product", productRouter);
 router.use("/cart", cartRouter);
 router.use("/auth", authRouter);
-router.use('/login' ,loginRouter)
+router.use('/login' ,loginRouter);
+router.use('/order' ,orderRouter);
 
 router.get("/", (req, res) => {
   res.send('Home Page')

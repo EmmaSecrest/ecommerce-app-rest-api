@@ -6,6 +6,75 @@ const {ensureAuthentication} = require('./login')
 
 
 
+//useful functions
+/* place item in the cart 
+ need to check to make sure that item exists first 
+then place it in the cart */
+const getProductByName = (itemId ,done) => {
+    // console.log(itemName) 
+    pool.query( "SELECT * FROM product WHERE id = $1 ", [itemId] ,
+    function(err, result ){
+        if(err){
+            console.log(err);
+            done(err,null)
+        } else {
+            done(null , result)
+        }
+    }  ) 
+
+}
+
+const checkProductInCart = (cartId, productId ,done) => {
+    pool.query("SELECT * FROM cart_item WHERE cart_id = $1 AND product_id = $2 " , [cartId ,productId] ,
+    function (err, result){
+        if(err){
+            console.log(err)
+            done(err,null);
+        } else {
+            done(null,result);
+        }
+    })
+}
+const placeInOrder = (total,user_id , done)=>{
+    pool.query('INSERT INTO orders (total, user_id, status ) VALUES ($1 , $2 ,$3) RETURNING id' , [total, user_id , 'received'],
+    function(err, result){
+        if(err){
+            console.log(err)
+            done(err,null)
+        } else{
+         
+           done(null, result)
+        }
+    }
+    )
+   }
+   
+    const placeInOrderItem = (price,productId,orderId,done )=>{
+       pool.query('INSERT INTO order_item (price , product_id, order_id) VALUES ($1,$2, $3)' ,[price,productId,orderId],
+       function(err,result){
+           if(err){
+               console.log(err)
+               done(err,null)
+           } else{
+               done(null,result)
+           }
+       })
+    }
+   
+    //erase all items from the cart once submitted
+    const eraseCartItems = (cartId , done)=>{
+       pool.query('DELETE FROM cart_item WHERE cart_id = $1' , [cartId],
+       function(err, result){
+            if(err){
+                console.log(err)
+                done(err, null)
+            }else{
+               done(null, result)
+            }
+       })
+    }
+
+
 //get the users carts
 cartRouter.get('/' ,ensureAuthentication ,(req,res) => {
     const requestedCart = Number(req.user.id)
@@ -45,36 +114,6 @@ cartRouter.get('/:cartId',ensureAuthentication ,(req,res) => {
     )
 })
 
-/* place item in the cart 
- need to check to make sure that item exists first 
-then place it in the cart */
-const getProductByName = (itemId ,done) => {
-    // console.log(itemName) 
-    pool.query( "SELECT * FROM product WHERE id = $1 ", [itemId] ,
-    function(err, result ){
-        if(err){
-            console.log(err);
-            done(err,null)
-        } else {
-            done(null , result)
-        }
-    }  ) 
-
-}
-
-const checkProductInCart = (cartId, productId ,done) => {
-    pool.query("SELECT * FROM cart_item WHERE cart_id = $1 AND product_id = $2 " , [cartId ,productId] ,
-    function (err, result){
-        if(err){
-            console.log(err)
-            done(err,null);
-        } else {
-            done(null,result);
-        }
-    })
-}
-
-// needs to be tested
 cartRouter.post('/:cartId' ,ensureAuthentication ,(req,res) => {
     const  itemId = req.body.itemId
     // console.log(itemName)
@@ -126,33 +165,6 @@ cartRouter.delete('/:cartId',ensureAuthentication ,(req,res) =>{
 })
 
 
-const placeInOrder = (total,user_id , done)=>{
- pool.query('INSERT INTO orders (total, user_id , status) VALUES ($1 , $2, "received") RETURNING id' , [total, user_id],
- function(err, result){
-     if(err){
-         console.log(err)
-         done(err,null)
-     } else{
-      
-        done(null, result)
-     }
- }
- )
-}
-
- const placeInOrderItem = (price,productId,orderId,done )=>{
-    pool.query('INSERT INTO order_item (price , product_id, order_id) VALUES ($1,$2, $3)' ,[price,productId,orderId],
-    function(err,result){
-        if(err){
-            console.log(err)
-            done(err,null)
-        } else{
-            done(null,result)
-        }
-    })
- }
-
-
 cartRouter.get('/:cartId/checkout',ensureAuthentication,(req,res) =>{
     
     const requestedCart = Number(req.params.cartId)
@@ -177,7 +189,8 @@ cartRouter.get('/:cartId/checkout',ensureAuthentication,(req,res) =>{
                 if(err){
                     console.log(err)
                 }
-                 for(let i = 0; i<data.rows.length; i++){
+                // console.log(result.rows) 
+                for(let i = 0; i<data.rows.length; i++){
                      placeInOrderItem(data.rows[i].price , data.rows[i].product_id,result.rows[0].id ,function(err,results){
                          if(err){
                              console.log(err)
@@ -186,7 +199,11 @@ cartRouter.get('/:cartId/checkout',ensureAuthentication,(req,res) =>{
                  }
             })
 
-        
+        eraseCartItems(requestedCart ,function(err,stuff){
+            if(err){
+                console.log(err)
+            }
+        })
         res.send(sendMe)
       }
     })
